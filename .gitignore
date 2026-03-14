@@ -46,3 +46,9 @@ wp-config.php
 # Note: If you wish to whitelist themes,
 # uncomment the next line
 #/wp-content/themes
+
+# Track only the Lunara theme and plugin; ignore everything else under wp-content
+/wp-content/plugins/*
+!/wp-content/plugins/academy-awards-table/
+/wp-content/themes/*
+!/wp-content/themes/lunara/
