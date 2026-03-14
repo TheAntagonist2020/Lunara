@@ -1,117 +1,151 @@
-# Lunara
+# Lunara Film
 
-A bespoke WordPress website for film reviews and a custom Oscars database.
+A bespoke WordPress website for film reviews and the Lunara Oscar Ledger — a comprehensive, searchable record of every Academy Award nominee and winner.
+
+**Live site:** [lunarafilm.com](https://lunarafilm.com)
+
+---
 
 ## Repository Structure
+
+This repository tracks the custom code only. WordPress core, `wp-config.php`, and uploads are excluded by `.gitignore`.
 
 ```
 wp-content/
 ├── themes/
-│   └── lunara/               # Custom Lunara theme
-│       ├── style.css         # Theme header + base styles
-│       ├── functions.php     # Theme setup, CPTs, taxonomies, helpers
-│       ├── index.php         # Main fallback template
-│       ├── single.php        # Single post / film review template
-│       ├── archive.php       # Archive (genre, decade, date) template
-│       ├── page.php          # Static page template
-│       ├── search.php        # Search results template
-│       ├── 404.php           # 404 error page
-│       ├── header.php        # Site header & navigation
-│       ├── footer.php        # Site footer & widgets
-│       ├── sidebar.php       # Sidebar widget area
-│       ├── inc/
-│       │   └── nav-fallback.php
-│       ├── template-parts/
-│       │   ├── content.php              # Generic post card
-│       │   ├── content-lunara_review.php # Film review card
-│       │   └── content-search.php       # Search result item
+│   └── lunara/                          # Child theme for Blocksy
+│       ├── style.css                    # Theme header (Template: blocksy) + base styles
+│       ├── functions.php                # Theme setup, CPT, meta boxes, carousel, helpers
+│       ├── front-page.php               # Homepage template
+│       ├── archive-review.php           # Film review archive
+│       ├── taxonomy-lunara_director.php # Director taxonomy archive
 │       └── assets/
-│           ├── css/main.css  # Supplementary styles
-│           └── js/main.js    # Mobile nav + Oscars table filtering
+│           ├── css/
+│           │   └── lunara-carousel-admin.css   # Carousel manager admin styles
+│           ├── js/
+│           │   ├── lunara-carousel.js          # Front-end poster carousel
+│           │   └── lunara-carousel-admin.js    # Carousel manager admin UI
+│           └── data/
+│               └── imdb-title-map.json         # IMDb title ID lookup for reviews
 └── plugins/
-    └── lunara-oscars/        # Bespoke Oscars Database plugin
-        ├── lunara-oscars.php # Plugin bootstrap
-        ├── includes/
-        │   ├── class-oscars-database.php   # DB CRUD (custom table)
-        │   └── class-oscars-shortcodes.php # Front-end shortcodes
-        ├── admin/
-        │   ├── class-oscars-admin.php      # Admin list/edit UI
-        │   └── admin.css
-        └── assets/
-            └── oscars.css    # Front-end plugin styles
+    └── academy-awards-table/            # Lunara Film — Academy Awards Database plugin
+        ├── academy-awards-table.php     # Plugin bootstrap + main class
+        ├── readme.txt                   # Plugin readme / changelog
+        ├── data/
+        │   └── oscars.csv               # Bundled dataset (97 ceremonies, 12 000+ nominations)
+        ├── assets/
+        │   ├── css/
+        │   │   ├── academy-awards-table.css    # Front-end table styles
+        │   │   └── admin.css                   # Admin panel styles
+        │   ├── js/
+        │   │   ├── academy-awards-table.js     # DataTables + filters + entity links
+        │   │   ├── admin.js                    # Admin CSV import + tracker + poster UI
+        │   │   └── tracker-v2.js               # Awards Tracker frontend tabs
+        │   └── img/
+        │       └── oscar.png                   # Oscar statuette icon (add manually)
+        └── templates/
+            ├── table-display.php        # [academy_awards] shortcode output
+            ├── entity-page.php          # Film / Person / Company profile pages
+            ├── hub-page.php             # /oscars/ceremonies/, /oscars/categories/ hubs
+            ├── tracker-v2.php           # [lunara_awards_tracker_v2] frontend
+            ├── admin-page.php           # WP Admin: import + shortcode reference
+            ├── tracker-admin.php        # WP Admin: Awards Tracker picks editor
+            └── poster-admin.php         # WP Admin: Poster Library
 ```
 
-## WordPress Setup
+---
+
+## Setup
 
 ### Requirements
 
 - WordPress 6.0+
-- PHP 8.0+
+- PHP 7.4+
 - MySQL 5.7+ / MariaDB 10.3+
+- **Parent theme:** [Blocksy](https://wordpress.org/themes/blocksy/) (free version)
 
 ### Installation
 
-1. Clone this repository into the root of your WordPress installation:
-   ```
+1. Install and activate the **Blocksy** parent theme via **Appearance → Themes → Add New**.
+
+2. Clone this repository into your WordPress root (or copy the `wp-content/` folder into place):
+   ```bash
    git clone https://github.com/TheAntagonist2020/Lunara.git .
    ```
-   Or clone it alongside WordPress and copy the `wp-content` directory into place.
 
-2. In the WordPress Admin:
-   - **Appearance → Themes** – activate the **Lunara** theme.
-   - **Plugins → Installed Plugins** – activate **Lunara Oscars Database**.
-     The plugin will automatically create the `wp_lunara_oscars` database table on activation.
+3. In WP Admin:
+   - **Appearance → Themes** — activate **Lunara Film** (child theme).
+   - **Plugins → Installed Plugins** — activate **Lunara Film — Academy Awards Database**.
 
-3. Assign menus under **Appearance → Menus**:
-   - *Primary Menu* – main site navigation
-   - *Footer Menu* – footer links
-   - *Social Links* – social icons
+4. Import the Oscars dataset:
+   - Go to **Academy Awards** in the WP Admin sidebar.
+   - Click **Import Bundled oscars.csv** — this loads the full historical dataset into the `wp_academy_awards` table (chunked to avoid timeouts).
 
-4. Optionally configure widget areas under **Appearance → Widgets**:
-   - Main Sidebar
-   - Footer — Column 1 / 2 / 3
+5. Add the Oscar statuette icon:
+   - Upload `oscar.png` to `wp-content/plugins/academy-awards-table/assets/img/oscar.png`
+   - (This image is not tracked in git — add your own or use a free SVG statuette.)
 
-### Custom Post Type: Film Reviews
+---
 
-Reviews are stored in the `lunara_review` custom post type (slug: `/reviews/`).
+## Theme Details
 
-Each review supports custom meta fields (editable via the **Film Details** meta box):
+The Lunara child theme extends [Blocksy](https://wordpress.org/themes/blocksy/) with:
 
-| Field              | Description                          |
-|--------------------|--------------------------------------|
-| Director           | Film director name                   |
-| Release Year       | Four-digit year                      |
-| Runtime            | Length in minutes                    |
-| Rating             | Score 0–10 (supports half points)    |
-| Certification      | e.g. 15, PG-13, R                    |
-| Country            | Country of origin                    |
-| Streaming On       | e.g. Netflix, Prime Video            |
-| Oscar Nominations  | Number of Academy Award nominations  |
-| Oscar Wins         | Number of Academy Award wins         |
+- **`review` custom post type** — film reviews at `/reviews/`
+- **`lunara_director` taxonomy** — director archives
+- **Debrief meta box** — per-review fields: score (0–5 stars), release year, IMDb title ID, where to watch, theme echo, counter-program, career context
+- **Poster carousel** — managed via **Appearance → Carousel Manager**; front-end shortcode `[lunara_carousel set="homepage"]`
+- **Star rating renderer** — `lunara_render_stars( $score )` returns accessible HTML star icons
 
-**Taxonomies:**
-- *Genres* (`/genre/`) – hierarchical
-- *Decades* (`/decade/`) – flat
-
-### Oscars Database Plugin
-
-Navigate to **Oscars DB** in the WordPress admin sidebar to:
-- Browse all nominations with live filters (year, category, winner/nominee)
-- Add / edit / delete individual nominations
-
-#### Shortcodes
+### Shortcodes (theme)
 
 | Shortcode | Description |
 |-----------|-------------|
-| `[lunara_oscars]` | Filterable table of all nominations |
-| `[lunara_oscars year="2024"]` | Filter by ceremony year |
-| `[lunara_oscars winners="only"]` | Show winners only |
-| `[lunara_oscars_winners year="2024"]` | List of winners for a specific year |
-| `[lunara_film_oscars film="Oppenheimer"]` | Oscar history for a specific film |
+| `[lunara_reviews count="6"]` | Grid of latest reviews |
+| `[lunara_posts count="3"]` | Latest blog posts |
+| `[lunara_carousel set="homepage"]` | Poster carousel |
+
+---
+
+## Oscars Database Plugin
+
+The **Academy Awards Table** plugin powers the full Oscars section of the site.
+
+### Features
+
+- Interactive, server-side paginated table (DataTables) with instant search
+- Dropdown filters: Category, Type, Year, Ceremony
+- Winners-only toggle
+- Clickable film/person profiles (internal entity pages with IMDb reference links)
+- Hub pages: `/oscars/ceremonies/`, `/oscars/categories/`
+- Awards Tracker (Predictions / Locks / Watchlist / Longshots)
+- Poster Library — maps IMDb title IDs to WordPress media attachments
+- One-click CSV importer + delta (single ceremony) updater
+
+### Shortcodes (plugin)
+
+| Shortcode | Description |
+|-----------|-------------|
+| `[academy_awards]` | Full interactive nominations table |
+| `[academy_awards category="BEST PICTURE"]` | Filter by category |
+| `[academy_awards year="2024"]` | Filter by year |
+| `[academy_awards winners_only="true"]` | Winners only |
+| `[academy_awards ceremony="latest"]` | Most recent ceremony |
+| `[lunara_awards_tracker_v2]` | Awards Tracker (Predictions/Locks/Watchlist) |
+
+### Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `wp_academy_awards` | All nominations (97 ceremonies, 12 000+ rows) |
+| `wp_aat_tracker` | Awards Tracker picks |
+| `wp_aat_posters` | IMDb ID → Media Library attachment map |
+
+---
 
 ## Development
 
-This repository tracks only custom code — WordPress core files are excluded by `.gitignore`.
+This repository tracks only custom code. WordPress core, configuration, uploads, and default themes/plugins are excluded by `.gitignore`.
 
 To contribute:
 1. Fork the repository
