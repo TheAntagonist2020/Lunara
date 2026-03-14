@@ -1,0 +1,15 @@
+/* Lunara Oscars Plugin — admin styles */
+
+#oscars-filter-form .tablenav.top {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+#oscars-filter-form .alignleft.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
