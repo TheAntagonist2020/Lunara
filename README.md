@@ -2,51 +2,88 @@
 
 The repository for the Lunara film website, featuring reviews and a bespoke Oscars database.
 
+## Repository structure
+
+This repository follows the standard WordPress `wp-content` directory layout so you can drop it
+straight into an existing WordPress installation:
+
+```
+wp-content/
+├── themes/
+│   └── lunara/               ← Lunara Film child theme (parent: Blocksy)
+│       ├── style.css
+│       ├── functions.php
+│       ├── front-page.php
+│       ├── archive-review.php
+│       ├── taxonomy-lunara_director.php
+│       └── assets/
+│           ├── css/lunara-carousel-admin.css
+│           ├── js/lunara-carousel.js
+│           ├── js/lunara-carousel-admin.js
+│           └── data/imdb-title-map.json
+└── plugins/
+    └── academy-awards-table/ ← Academy Awards Database plugin
+        ├── academy-awards-table.php
+        ├── readme.txt
+        ├── assets/
+        │   ├── css/academy-awards-table.css
+        │   ├── css/admin.css
+        │   ├── js/academy-awards-table.js
+        │   ├── js/admin.js
+        │   └── js/tracker-v2.js
+        ├── templates/
+        │   ├── admin-page.php
+        │   ├── entity-page.php
+        │   ├── hub-page.php
+        │   ├── table-display.php
+        │   ├── tracker-admin.php
+        │   ├── tracker-v2.php
+        │   └── poster-admin.php
+        └── data/
+            └── oscars.csv
+```
+
 ## Installation into WordPress
 
-Lunara is distributed as a WordPress theme, and may include one or more custom plugins.
-To deploy this repository into a WordPress site, use the standard WordPress directory
-layout under `wp-content`:
-
-1. Clone or download this repository somewhere on your server or development machine
-   (it does **not** need to live inside your WordPress directory):
+1. Clone or download this repository:
 
    ```bash
-   git clone https://github.com/your-org/lunara.git
+   git clone https://github.com/TheAntagonist2020/Lunara.git
    ```
 
-2. Identify the Lunara **theme** directory in this repository. This is the folder that
-   contains a `style.css` file with a WordPress `Theme Name` header (for example,
-   a folder named `lunara` or similar).
+2. Copy (or symlink) the `wp-content` directory contents into your WordPress installation:
 
-3. Copy or symlink that theme directory into your WordPress installation under:
+   ```bash
+   # Theme
+   cp -r wp-content/themes/lunara /path/to/wordpress/wp-content/themes/
 
-   ```text
-   /path/to/wordpress/wp-content/themes/<lunara-theme-folder>/
+   # Plugin
+   cp -r wp-content/plugins/academy-awards-table /path/to/wordpress/wp-content/plugins/
    ```
 
-   After this step, the Lunara theme folder should be a direct child of
-   `wp-content/themes/`.
+   Or, for a symlink-based workflow (great for development):
 
-4. If this repository includes one or more custom **plugins** (each plugin is typically
-   a folder containing a main PHP file with a WordPress plugin header), copy or symlink
-   each plugin folder into:
+   ```bash
+   ln -s /path/to/this/repo/wp-content/themes/lunara \
+         /path/to/wordpress/wp-content/themes/lunara
 
-   ```text
-   /path/to/wordpress/wp-content/plugins/<plugin-folder>/
+   ln -s /path/to/this/repo/wp-content/plugins/academy-awards-table \
+         /path/to/wordpress/wp-content/plugins/academy-awards-table
    ```
 
-   After this step, each Lunara plugin folder should be a direct child of
-   `wp-content/plugins/`.
+3. Log in to your WordPress admin dashboard:
 
-5. Log in to your WordPress admin dashboard:
+   - Go to **Appearance → Themes** and activate the **Lunara Film** theme.
+     > Lunara Film is a child theme — make sure the **Blocksy** parent theme is also installed and active.
+   - Go to **Plugins → Installed Plugins** and activate **Lunara Film — Academy Awards Database**.
 
-   - Go to **Appearance → Themes** and activate the **Lunara** theme.
-   - Go to **Plugins → Installed Plugins** and activate any Lunara plugins you copied
-     into `wp-content/plugins/`.
+4. Import the Oscars dataset:
+
+   - Go to **Academy Awards → Import Data** in the admin menu.
+   - Click **Import Bundled oscars.csv** to load the full dataset in one step.
 
 Once these steps are complete, your WordPress site will use the Lunara theme and
-any associated plugins to power the film reviews and Oscars database functionality.
+the Academy Awards Database plugin to power the film reviews and Oscars database functionality.
 
 ---
 
