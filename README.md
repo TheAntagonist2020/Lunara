@@ -87,6 +87,69 @@ the Academy Awards Database plugin to power the film reviews and Oscars database
 
 ---
 
+## GitHub → WordPress Deployment
+
+This repository is connected to the live [LunaraFilm](https://lunarafilm.wordpress.com) WordPress.com Business site via **GitHub Actions**.  Two automated workflows are included:
+
+| Workflow | File | Trigger | Purpose |
+|---|---|---|---|
+| **CI – Lint & Validate** | `.github/workflows/ci.yml` | Every pull request targeting `main`; every push to non-`main` branches | Runs PHP syntax checks on the theme and plugin so broken code can never reach production |
+| **Deploy to WordPress.com** | `.github/workflows/deploy.yml` | Every push / merge to `main` | Validates, packages, and deploys the theme + plugin to WordPress.com via SFTP |
+
+### Branching strategy
+
+```
+feature/* or fix/*  →  pull request  →  main  →  auto-deploy to production
+```
+
+- All work happens in feature branches.
+- A pull request to `main` triggers the CI lint check.
+- Merging to `main` automatically deploys to the live site.
+- For a staging environment, create a `staging` branch and a second workflow file (e.g. `.github/workflows/deploy-staging.yml`) that uses a separate set of environment-specific secrets (e.g. `SFTP_HOST_STAGING`, `SFTP_USER_STAGING`, `SFTP_PASSWORD_STAGING`, `SFTP_PORT_STAGING`, `SFTP_THEME_PATH_STAGING`, `SFTP_PLUGIN_PATH_STAGING`).  Keep the production and staging secrets clearly separated to avoid accidental cross-environment deploys.
+
+### Setting up deployment secrets
+
+Go to **GitHub → Settings → Secrets and variables → Actions → New repository secret** and add the following:
+
+| Secret name | Description | Example |
+|---|---|---|
+| `SFTP_HOST` | SFTP hostname from WordPress.com | `sftp.wp.com` |
+| `SFTP_USER` | SFTP username (usually your WordPress.com username) | `yourusername` |
+| `SFTP_PASSWORD` | SFTP password or WordPress.com Application Password | `••••••••` |
+| `SFTP_PORT` | SFTP port (WordPress.com uses `22`) | `22` |
+| `SFTP_THEME_PATH` | Absolute remote path to the theme folder | `/htdocs/wp-content/themes/lunara` |
+| `SFTP_PLUGIN_PATH` | Absolute remote path to the plugin folder | `/htdocs/wp-content/plugins/academy-awards-table` |
+
+> **How to find your SFTP credentials on WordPress.com:**
+> 1. Log in at [wordpress.com](https://wordpress.com) and go to **My Sites → Hosting → SFTP/SSH**.
+> 2. Copy the **SFTP Server**, **Username**, and **Port** values.
+> 3. Generate or reset the SFTP password from the same screen.
+> 4. The remote path is usually `/htdocs/wp-content/themes/lunara` and `/htdocs/wp-content/plugins/academy-awards-table`.
+
+### Deployment protection (recommended)
+
+To require a manual review before production deploys go live:
+
+1. In your repo go to **Settings → Environments → New environment** and name it `production`.
+2. Under **Deployment protection rules** enable **Required reviewers** and add yourself or a trusted admin.
+3. The deploy workflow already references the `production` environment (`environment: production`), so every deploy will pause for approval.
+
+### Safety checklist for each release
+
+- [ ] Create a feature branch and make your changes.
+- [ ] Open a pull request → CI lint check must pass before merging.
+- [ ] Merge the PR into `main`.
+- [ ] The deploy workflow starts automatically. Review the **Actions** tab to confirm it succeeded.
+- [ ] If using Deployment Protection, approve the deployment when prompted.
+- [ ] Verify the live site looks and functions correctly after deploy.
+- [ ] If something is wrong, revert the merge commit on `main` — this will re-trigger the deploy with the previous code.
+
+### Build artifacts
+
+Every successful deploy also uploads zip archives of the theme and plugin as **GitHub Actions artifacts** (retained for 30 days).  These can be downloaded from the **Actions** tab for manual installation or rollback.
+
+---
+
 ## API Reference
 
 All endpoints use the WordPress AJAX API and are called via `POST` to `/wp-admin/admin-ajax.php`.

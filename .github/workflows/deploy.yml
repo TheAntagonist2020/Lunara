@@ -1,0 +1,128 @@
+name: Deploy to WordPress.com (Production)
+
+# Deploys the Lunara theme and Academy Awards plugin to the WordPress.com
+# production site whenever changes are merged (pushed) to the main branch.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   SFTP_HOST      – SFTP hostname provided by WordPress.com (e.g. sftp.wp.com)
+#   SFTP_USER      – SFTP username (your WordPress.com username or site-specific user)
+#   SFTP_PASSWORD  – SFTP password or application password
+#   SFTP_PORT      – SFTP port (WordPress.com typically uses 22)
+#   SFTP_THEME_PATH  – Remote path for the theme
+#                      e.g. /htdocs/wp-content/themes/lunara
+#   SFTP_PLUGIN_PATH – Remote path for the plugin
+#                      e.g. /htdocs/wp-content/plugins/academy-awards-table
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Package & Deploy
+    runs-on: ubuntu-latest
+    environment: production      # optional: enables required reviewers / deployment protection
+    permissions:
+      contents: read
+      actions: write             # required for actions/upload-artifact
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: none
+
+      # ── Validate before shipping ────────────────────────────────────────────
+      - name: PHP syntax check (theme)
+        run: find wp-content/themes/lunara -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: PHP syntax check (plugin)
+        run: find wp-content/plugins/academy-awards-table -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      # ── Package ─────────────────────────────────────────────────────────────
+      - name: Package theme zip
+        run: |
+          cd wp-content/themes
+          zip -r ../../lunara-theme.zip lunara/
+
+      - name: Package plugin zip
+        run: |
+          cd wp-content/plugins
+          zip -r ../../academy-awards-table-plugin.zip academy-awards-table/
+
+      - name: Upload theme artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lunara-theme
+          path: lunara-theme.zip
+          retention-days: 30
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy-awards-table-plugin
+          path: academy-awards-table-plugin.zip
+          retention-days: 30
+
+      # ── Deploy via SFTP ─────────────────────────────────────────────────────
+      - name: Install lftp
+        run: sudo apt-get install -y lftp
+
+      - name: Deploy theme via SFTP
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_THEME_PATH: ${{ secrets.SFTP_THEME_PATH }}
+        run: |
+          # Write credentials to a netrc-style file so they never appear in
+          # the process list or shell history.
+          NETRC_FILE=$(mktemp)
+          chmod 600 "$NETRC_FILE"
+          printf 'machine %s login %s password %s\n' \
+            "$SFTP_HOST" "$SFTP_USER" "$SFTP_PASSWORD" > "$NETRC_FILE"
+
+          lftp -p "$SFTP_PORT" sftp://"$SFTP_HOST" \
+            --netrc-file="$NETRC_FILE" <<EOF
+          set sftp:auto-confirm yes
+          set net:max-retries 3
+          # --only-newer uploads changed/new files without removing anything on
+          # the remote, making it safe even if the local checkout is partial.
+          mirror --reverse --only-newer --verbose \
+                 wp-content/themes/lunara/ \
+                 "$SFTP_THEME_PATH"/
+          bye
+          EOF
+
+          rm -f "$NETRC_FILE"
+
+      - name: Deploy plugin via SFTP
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_PLUGIN_PATH: ${{ secrets.SFTP_PLUGIN_PATH }}
+        run: |
+          NETRC_FILE=$(mktemp)
+          chmod 600 "$NETRC_FILE"
+          printf 'machine %s login %s password %s\n' \
+            "$SFTP_HOST" "$SFTP_USER" "$SFTP_PASSWORD" > "$NETRC_FILE"
+
+          lftp -p "$SFTP_PORT" sftp://"$SFTP_HOST" \
+            --netrc-file="$NETRC_FILE" <<EOF
+          set sftp:auto-confirm yes
+          set net:max-retries 3
+          mirror --reverse --only-newer --verbose \
+                 wp-content/plugins/academy-awards-table/ \
+                 "$SFTP_PLUGIN_PATH"/
+          bye
+          EOF
+
+          rm -f "$NETRC_FILE"
